@@ -15,6 +15,9 @@
             autofocus
             dense
             v-model="categoriaNova.nome"
+            :disable="desabilitarEdicao"
+            lazy-rules
+            :rules="[val => val && val.length > 0 || 'Nome é obrigatório']"
           ></q-input>
         </q-card-section>
         <q-card-section>
@@ -31,6 +34,7 @@
                 label="Salvar"
                 color="positive"
                 type="submit"
+                :disable="desabilitarEdicao"
                 @click="salvar"
               ></q-btn>
             </div>
@@ -118,7 +122,7 @@
                   size="sm"
                   color="red"
                   icon="fas fa-trash-alt"
-                  @click="excluirCategoria(categoria)"
+                  @click="confirmarExclusao(categoria)"
                 ></q-btn>
               </q-td>
             </div>
@@ -137,13 +141,11 @@ export default {
       categoriaList: [],
       nomePesquisa: '',
       categoriaNova: {},
-      dialogNovaCategoria: false
+      dialogNovaCategoria: false,
+      desabilitarEdicao: false
     }
   },
   methods: {
-    salvar () {
-
-    },
     listarCategoria () {
       this.$axios.get(api.CATEGORIA).then((res) => {
         this.categoriaList = res.data
@@ -161,17 +163,63 @@ export default {
         util.mensagemFalha(err)
       })
     },
-    criarCategoria () {
-
+    salvar () {
+      this.$refs.refCategoriaNova.validate()
+      if (this.$refs.refCategoriaNova.hasError) {
+        this.formHasError = true
+      } else {
+        if (!this.categoriaNova.codigo) {
+          this.$axios.post(api.CATEGORIA, this.categoriaNova).then((res) => {
+            util.mensagemSucessoAoSalvar()
+            this.limparObjetoCategoriaAoSalvar()
+            this.listarCategoria()
+          }).catch((err) => {
+            util.mensagemFalha(err)
+          })
+        } else {
+          const filtro = '/'.concat(this.categoriaNova.codigo)
+          this.$axios.put(api.CATEGORIA.concat(filtro), this.categoriaNova).then((res) => {
+            util.mensagemSucessoAoAtualizar()
+            this.limparObjetoCategoriaAoSalvar()
+            this.listarCategoria()
+          }).catch((err) => {
+            util.mensagemFalha(err)
+          })
+        }
+      }
     },
     visualizarCategoria (categoria) {
-      alert('visualizando categoria')
+      this.categoriaNova = categoria
+      this.dialogNovaCategoria = true
+      this.desabilitarEdicao = true
     },
     editarCategoria (categoria) {
-      alert('você vai editar essa bagaça?')
+      this.categoriaNova = categoria
+      this.dialogNovaCategoria = true
+      this.desabilitarEdicao = false
     },
     excluirCategoria (categoria) {
-      alert('não vai excluir ninguém!!!')
+      const filtro = '/'.concat(categoria.codigo)
+      this.$axios.delete(api.CATEGORIA.concat(filtro)).then((res) => {
+        util.mensagemSucessoAoDeletar()
+        this.listarCategoria()
+      }).catch((err) => {
+        util.mensagemFalha(err)
+      })
+    },
+    confirmarExclusao (categoria) {
+      this.$q.dialog({
+        title: 'Excluir',
+        message: 'Deseja realmente excluir a categoria '.concat(categoria.nome).concat('?'),
+        cancel: true,
+        persistent: true
+      }).onOk(() => {
+        this.excluirCategoria(categoria)
+      })
+    },
+    limparObjetoCategoriaAoSalvar () {
+      this.categoriaNova = {}
+      this.dialogNovaCategoria = false
     }
   },
   mounted () {

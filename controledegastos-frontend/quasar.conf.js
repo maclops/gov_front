@@ -60,7 +60,8 @@ module.exports = function (ctx) {
         'QSelect',
         'QDate',
         'QPopupProxy',
-        'QUploader'
+        'QUploader',
+        'QRadio'
       ],
 
       directives: [
@@ -69,7 +70,8 @@ module.exports = function (ctx) {
 
       // Quasar plugins
       plugins: [
-        'Notify'
+        'Notify',
+        'Dialog'
       ]
     },
 
